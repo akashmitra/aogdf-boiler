@@ -5,10 +5,14 @@
     const bodyParser = require('body-parser');
     const http = require('http');
     const logger = require('./log');
+    const util = require('./util');
+    const service = require('./service');
+    const welcome_service = require('./services/welcome_service');
+    const searchResort_service = require('./services/searchResort_service');
     const { WebhookClient } = require('dialogflow-fulfillment');
     const { Card, Suggestion } = require('dialogflow-fulfillment');
-    const { Carousel } = require('actions-on-google');
-
+    const { Carousel, Image } = require('actions-on-google');
+    
     const port = process.env.PORT || 3000;
     process.env.DEBUG = 'dialogflow:debug';
 
@@ -24,11 +28,12 @@
     const linkUrl = 'https://assistant.google.com/';
 
 
-    app.post('/dialogflow', (request, response) => {
-
+    app.post('/', (request, response) => {
+        logger.trace(`Post hit!`);
         const agent = new WebhookClient({ request: request, response: response });
         logger.trace('Dialogflow Request headers: ' + JSON.stringify(request.headers));
         logger.trace('Dialogflow Request body: ' + JSON.stringify(request.body));
+        console.log(request.body);
 
         function googleAssistantOther(agent) {
             let conv = agent.conv(); // Get Actions on Google library conversation object
@@ -58,12 +63,43 @@
         }
 
         function welcome(agent) {
-            agent.add(`Welcome to my agent!`);
+          let conv = agent.conv();
+          welcome_service.welcome(conv);
+          agent.add(conv);
         }
 
         function fallback(agent) {
-            agent.add(`I didn't understand`);
-            agent.add(`I'm sorry, can you try again?`);
+            var fallback_arr = [
+              "I didn't understand",
+              "I'm sorry, can you try again?"
+              ];
+            agent.add(util.getRandomMessage(fallback_arr));
+        }
+      
+        function searchResort(){
+          let location = request.body.queryResult.parameters.geostate;
+          let checkin_date = request.body.queryResult.parameters.checkin;
+          let checkout_date = request.body.queryResult.parameters.checkout;
+          
+          let conv = agent.conv();
+          conv.user.storage.startResortIndex=0;        //Reset to beginning
+          conv.user.storage.resortLocation=location;    //Store location in session
+          searchResort_service.searchResort(location,conv);
+          agent.add(conv);
+        } 
+      
+      function searchResortNext(){
+        let conv = agent.conv();
+        searchResort_service.searchResort(conv.user.storage.resortLocation,conv);
+        agent.add(conv);
+      }
+      
+      function depositTradingPower(agent) {
+          agent.add(service.depositTradingPower());
+        }
+      
+       function exit(agent) {
+          agent.add(service.exit());
         }
 
         function testWebhook(agent) {
@@ -90,6 +126,10 @@
         let intentMap = new Map();
         intentMap.set('Default Welcome Intent', welcome);
         intentMap.set('Default Fallback Intent', fallback);
+        intentMap.set('Search Resort', searchResort);
+        intentMap.set('Search Resort Next', searchResortNext);
+        intentMap.set('Deposit Trading Power', depositTradingPower);
+        intentMap.set('Exit', exit);
         intentMap.set('TestWebhook', testWebhook);
 
         // Intent Error Handling: If req from Google Assistant use fn(googleAssistantOther) else fn(other)
@@ -100,11 +140,15 @@
         }
         agent.handleRequest(intentMap);
     });
+  
+    app.get('/', (request, response) => {
+      response.send('Say hello to SasChatter! Running on port: '+process.env.PORT);
+      logger.trace(`Get hit!`);
+    });
 
 
     // Creating a server at port 
     http.createServer(app).listen(port, () => {
-        logger.trace("Express server listening on port 3000");
+        logger.trace(`Express server listening on port ${port}`);
     });
-
 }());
