@@ -16,7 +16,7 @@
     "ui",
     "chatbot"
   ],
-  "author": "Akash Mitra",
+  "author": "Team Callback Cats",
   "license": "ISC",
   "dependencies": {
     "actions-on-google": "^2.6.0",

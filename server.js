@@ -6,9 +6,12 @@
     const http = require('http');
     const logger = require('./log');
     const util = require('./util');
-    const service = require('./service');
     const welcome_service = require('./services/welcome_service');
     const searchResort_service = require('./services/searchResort_service');
+    const deposit_service = require('./services/deposit_service');
+    const confirmedVacation_service = require('./services/confirmedVacation_service');
+    const goodbye_service = require('./services/goodbye_service');
+    const fallback_service = require('./services/fallback_service');
     const { WebhookClient } = require('dialogflow-fulfillment');
     const { Card, Suggestion } = require('dialogflow-fulfillment');
     const { Carousel, Image } = require('actions-on-google');
@@ -66,14 +69,11 @@
           let conv = agent.conv();
           welcome_service.welcome(conv);
           agent.add(conv);
+           // agent.add(welcome_service.welcome());
         }
 
         function fallback(agent) {
-            var fallback_arr = [
-              "I didn't understand",
-              "I'm sorry, can you try again?"
-              ];
-            agent.add(util.getRandomMessage(fallback_arr));
+            agent.add(fallback_service.fallback);
         }
       
         function searchResort(){
@@ -84,22 +84,50 @@
           let conv = agent.conv();
           conv.user.storage.startResortIndex=0;        //Reset to beginning
           conv.user.storage.resortLocation=location;    //Store location in session
-          searchResort_service.searchResort(location,conv);
+          conv.user.storage.checkin_date=checkin_date;
+          conv.user.storage.checkout_date=checkout_date;
+          searchResort_service.searchResort(checkin_date,
+                                            checkout_date,
+                                            location,
+                                            conv);
           agent.add(conv);
         } 
       
       function searchResortNext(){
         let conv = agent.conv();
-        searchResort_service.searchResort(conv.user.storage.resortLocation,conv);
+        searchResort_service.searchResort(conv.user.storage.checkin_date,
+                                          conv.user.storage.checkout_date,
+                                          conv.user.storage.resortLocation,
+                                          conv);
         agent.add(conv);
       }
       
-      function depositTradingPower(agent) {
-          agent.add(service.depositTradingPower());
+      function depositTradingPower() {
+        let conv = agent.conv();
+        agent.add(deposit_service.depositTradingPower(conv));
         }
       
+      function depositDetails(){
+        let conv = agent.conv();
+        deposit_service.depositDetails(conv);
+        agent.add(conv);
+      }
+      
+      function upcomingVacation(){
+        let conv = agent.conv();
+        conv.user.storage.startResortIndex=0;
+        confirmedVacation_service.showUpcomingVacation(conv);
+        agent.add(conv);
+      } 
+      
+       function upcomingVacationNext(){
+        let conv = agent.conv();
+        confirmedVacation_service.showUpcomingVacation(conv);
+        agent.add(conv);
+      }
+      
        function exit(agent) {
-          agent.add(service.exit());
+          agent.add(goodbye_service.exit());
         }
 
         function testWebhook(agent) {
@@ -129,6 +157,9 @@
         intentMap.set('Search Resort', searchResort);
         intentMap.set('Search Resort Next', searchResortNext);
         intentMap.set('Deposit Trading Power', depositTradingPower);
+        intentMap.set('Deposit Details', depositDetails);
+        intentMap.set('Vacation Details', upcomingVacation);
+        intentMap.set('Vacation Details Next', upcomingVacationNext);
         intentMap.set('Exit', exit);
         intentMap.set('TestWebhook', testWebhook);
 
