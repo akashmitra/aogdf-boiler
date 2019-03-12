@@ -53,9 +53,8 @@ module.exports ={
   
   isEmpty(val){
     if(val==='' || 
-       val===undefined || 
-       val==='undefined' || 
-       val===null || val===[] || 
+       val===undefined || val==='undefined' || 
+       val===null || 
        (Object.keys(val).length === 0 && val.constructor === Object) ||
        (Array.isArray(val) && val.length===0)){
       return true;

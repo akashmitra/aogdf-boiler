@@ -1,5 +1,5 @@
 const DATA = require('../data/data');
-const UTIL = require('../util');
+const UTIL = require('../util/util');
 const { Suggestions } = require('actions-on-google');
 
 module.exports ={
@@ -21,7 +21,6 @@ module.exports ={
     return conv;
   },
   
-  //ronit
   depositDetails:(conv)=>{
     var deposit_detail = conv.user.storage.tradingpower;
     console.log(deposit_detail);

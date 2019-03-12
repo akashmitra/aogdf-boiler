@@ -5,7 +5,8 @@
     const bodyParser = require('body-parser');
     const http = require('http');
     const logger = require('./log');
-    const util = require('./util');
+    const util = require('./util/util');
+    const ERROR_UTIL = require('./util/errorUtil');
     const welcome_service = require('./services/welcome_service');
     const searchResort_service = require('./services/searchResort_service');
     const deposit_service = require('./services/deposit_service');
@@ -66,65 +67,106 @@
         }
 
         function welcome(agent) {
-          let conv = agent.conv();
-          welcome_service.welcome(conv);
-          agent.add(conv);
-           // agent.add(welcome_service.welcome());
+          try{
+            let conv = agent.conv();
+            welcome_service.welcome(conv);
+            agent.add(conv);
+             // agent.add(welcome_service.welcome());
+          }
+          catch(exception){
+            ERROR_UTIL.serverError(exception, agent);
+          }
         }
 
-        function fallback(agent) {
-            agent.add(fallback_service.fallback);
+        function fallback() {
+          try{
+            let conv = agent.conv();
+            agent.add(fallback_service.fallback(conv));
+          }
+          catch(exception){
+            ERROR_UTIL.serverError(exception, agent);
+          }
         }
       
         function searchResort(){
-          let location = request.body.queryResult.parameters.geostate;
-          let checkin_date = request.body.queryResult.parameters.checkin;
-          let checkout_date = request.body.queryResult.parameters.checkout;
-          
-          let conv = agent.conv();
-          conv.user.storage.startResortIndex=0;        //Reset to beginning
-          conv.user.storage.resortLocation=location;    //Store location in session
-          conv.user.storage.checkin_date=checkin_date;
-          conv.user.storage.checkout_date=checkout_date;
-          searchResort_service.searchResort(checkin_date,
-                                            checkout_date,
-                                            location,
-                                            conv);
-          agent.add(conv);
+          try{
+            let location = request.body.queryResult.parameters.geostate;
+            let checkin_date = request.body.queryResult.parameters.checkin;
+            let checkout_date = request.body.queryResult.parameters.checkout;
+
+            let conv = agent.conv();
+            conv.user.storage.startResortIndex=0;        //Reset to beginning
+            conv.user.storage.resortLocation=location;    //Store location in session
+            conv.user.storage.checkin_date=checkin_date;
+            conv.user.storage.checkout_date=checkout_date;
+            searchResort_service.searchResort(checkin_date,
+                                              checkout_date,
+                                              location,
+                                              conv);
+            agent.add(conv);
+          }
+          catch(exception){
+            ERROR_UTIL.serverError(exception, agent);
+          }
         } 
       
       function searchResortNext(){
-        let conv = agent.conv();
-        searchResort_service.searchResort(conv.user.storage.checkin_date,
-                                          conv.user.storage.checkout_date,
-                                          conv.user.storage.resortLocation,
-                                          conv);
-        agent.add(conv);
+        try{
+          let conv = agent.conv();
+          searchResort_service.searchResort(conv.user.storage.checkin_date,
+                                            conv.user.storage.checkout_date,
+                                            conv.user.storage.resortLocation,
+                                            conv);
+          agent.add(conv);
+          }
+        catch(exception){
+          ERROR_UTIL.serverError(exception, agent);
+        }
       }
       
       function depositTradingPower() {
-        let conv = agent.conv();
-        agent.add(deposit_service.depositTradingPower(conv));
+        try{
+          let conv = agent.conv();
+          agent.add(deposit_service.depositTradingPower(conv));
         }
+        catch(exception){
+          ERROR_UTIL.serverError(exception, agent);
+        }
+      }
       
       function depositDetails(){
-        let conv = agent.conv();
-        deposit_service.depositDetails(conv);
-        agent.add(conv);
+        try{
+          let conv = agent.conv();
+          deposit_service.depositDetails(conv);
+          agent.add(conv);
+        }
+        catch(exception){
+          ERROR_UTIL.serverError(exception, agent);
+        }
       }
       
       function upcomingVacation(){
-        let conv = agent.conv();
-        conv.user.storage.startResortIndex=0;
-        confirmedVacation_service.showUpcomingVacation(conv);
-        agent.add(conv);
+        try{
+          let conv = agent.conv();
+          conv.user.storage.startResortIndex=0;
+          confirmedVacation_service.showUpcomingVacation(conv);
+          agent.add(conv);
+        }
+        catch(exception){
+          ERROR_UTIL.serverError(exception, agent);
+        }
       } 
       
        function upcomingVacationNext(){
-        let conv = agent.conv();
-        confirmedVacation_service.showUpcomingVacation(conv);
-        agent.add(conv);
-      }
+         try{
+          let conv = agent.conv();
+          confirmedVacation_service.showUpcomingVacation(conv);
+          agent.add(conv);
+         }
+          catch(exception){
+            ERROR_UTIL.serverError(exception, agent);
+          }
+       }
       
        function exit(agent) {
           agent.add(goodbye_service.exit());

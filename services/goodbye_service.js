@@ -1,4 +1,4 @@
-const UTIL = require('../util');
+const UTIL = require('../util/util');
 const DATA = require('../data/data');
 
 module.exports ={

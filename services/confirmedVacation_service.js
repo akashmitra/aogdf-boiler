@@ -1,4 +1,4 @@
-const UTIL = require('../util');
+const UTIL = require('../util/util');
 const CONFIG = require('../config');
 const DATA = require('../data/data');
 const { Card } = require('dialogflow-fulfillment');

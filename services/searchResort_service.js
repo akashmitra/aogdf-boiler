@@ -1,4 +1,4 @@
-const UTIL = require('../util');
+const UTIL = require('../util/util');
 const CONFIG = require('../config');
 const DATA = require('../data/data');
 const { Carousel, BrowseCarousel, Image, Suggestions } = require('actions-on-google');
@@ -34,7 +34,7 @@ module.exports ={
     if(!UTIL.isEmpty(conv.user.storage.startResortIndex)){
       startIndex=conv.user.storage.startResortIndex;
     }
-    for(let i=startIndex; i<startIndex+CONFIG.pagination_count && i<resorts.length; i++){
+    for(let i=startIndex; i<startIndex+CONFIG.searchResortPagination_count && i<resorts.length; i++){
       let resort=resorts[i];
       
       let item=UTIL.buildBrowserCarouselItem(`#${resort.resort_code}`,
