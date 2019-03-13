@@ -1,3 +1,5 @@
+const CONFIG = require('./config');
+
 (function () {
     'use strict';
 
@@ -8,7 +10,7 @@
         appenders: {
             develop: {
                 type: 'file',
-                filename: 'dev.log'
+                filename: CONFIG.log_filename
             }
         },
         categories: {
