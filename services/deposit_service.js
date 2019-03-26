@@ -3,8 +3,8 @@ const UTIL = require('../util/util');
 const { Suggestions } = require('actions-on-google');
 
 module.exports ={
-  
   depositTradingPower:(conv)=> {
+    
     var deposits = DATA.deposit_details;
     let max_trading_power = 0;
     deposits.filter((deposit) => {
