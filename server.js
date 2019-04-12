@@ -8,16 +8,28 @@
     const { WebhookClient } = require('dialogflow-fulfillment');
     const { Carousel, Image } = require('actions-on-google');
   
+    /*---------------------- Utils ----------------------*/
     const logger = require('./log');
     const UTIL = require('./util/util');
     const ERROR_UTIL = require('./util/errorUtil');
-    const SESSION_UTIL = require('./util/sessionUtil');
-    const welcome_service = require('./services/welcome_service');
-    const searchResort_service = require('./services/searchResort_service');
-    const deposit_service = require('./services/deposit_service');
-    const confirmedVacation_service = require('./services/confirmedVacation_service');
-    const goodbye_service = require('./services/goodbye_service');
-    const fallback_service = require('./services/fallback_service');
+    /*---------------------- Utils ----------------------*/
+  
+    /*---------------------- Intents ----------------------*/
+    const welcome_intent = require('./intents/welcome.intent');
+    const searchResort_intent = require('./intents/searchResort.intent');
+    const deposit_intent = require('./intents/deposit.intent.js');
+    const confirmedVacation_intent = require('./intents/confirmedVacation.intent.js');
+    const fallback_intent = require('./intents/fallback.intent');
+    const exit_intent = require('./intents/exit.intent');
+    /*---------------------- Intents ----------------------*/
+  
+    /*---------------------- Services ----------------------*/
+    const searchResort_service = require('./services/searchResort.service');
+    const deposit_service = require('./services/deposit.service');
+    const confirmedVacation_service = require('./services/confirmedVacation.service');
+    const exit_service = require('./services/exit.service');
+    const fallback_service = require('./services/fallback.service');
+    /*---------------------- Services ----------------------*/
     
     const port = process.env.PORT || 3000;
     process.env.DEBUG = 'dialogflow:debug';
@@ -30,63 +42,13 @@
 
   
     app.post('/', (request, response) => {
+      //console.log(request);
       const agent = new WebhookClient({ request: request, response: response });
       logger.trace('Dialogflow Request headers: ' + JSON.stringify(request.headers));
       logger.trace('Dialogflow Request body: ' + JSON.stringify(request.body));
-
-      var sessionID=UTIL.fetchSessionID(request);
+      console.log(agent);
+      console.log(`Intent: ${agent.intent}`);
       var buildResponse=UTIL.buildResponse;
-
-      console.log(request.body);
-      console.log(sessionID);
-
-      function welcome() {        
-        try{
-          return new Promise((resolve, reject) => {
-            welcome_service.welcome(agent,buildResponse,resolve);
-          });
-        }
-        catch(exception){
-          ERROR_UTIL.serverError(exception, agent);
-        }
-      }
-
-      function fallback() {
-        try{
-          let conv = agent.conv();
-          agent.add(fallback_service.fallback(conv));
-        }
-        catch(exception){
-          ERROR_UTIL.serverError(exception, agent);
-        }
-      }
-      
-      function searchResort(){
-        try{
-          let location = request.body.queryResult.parameters.geostate;
-          let checkin_date = request.body.queryResult.parameters.checkin;
-          let checkout_date = request.body.queryResult.parameters.checkout;
-
-          let conv = agent.conv();
-          // conv.user.storage.startResortIndex=0;        //Reset to beginning
-          // conv.user.storage.resortLocation=location;    //Store location in session
-          // conv.user.storage.checkin_date=checkin_date;
-          // conv.user.storage.checkout_date=checkout_date;
-          
-          SESSION_UTIL.setSession(sessionID,'startResortIndex',0);          //Reset to beginning
-          SESSION_UTIL.setSession(sessionID,'resortLocation',location);     //Store location in session
-          SESSION_UTIL.setSession(sessionID,'checkin_date',checkin_date);
-          SESSION_UTIL.setSession(sessionID,'checkout_date',checkout_date);
-          
-          return new Promise((resolve, reject) => {
-            searchResort_service.searchResort({checkin_date,checkout_date,location},
-                                               sessionID,agent,buildResponse,resolve);
-          });
-        }
-        catch(exception){
-          ERROR_UTIL.serverError(exception, agent);
-        }
-      } 
       
       function searchResortNext(){
         try{
@@ -96,77 +58,44 @@
                                             conv.user.storage.resortLocation,
                                             conv);
           agent.add(conv);
-          }
-        catch(exception){
-          ERROR_UTIL.serverError(exception, agent);
-        }
-      }
-      
-      function depositTradingPower() {
-        try{
-          let conv = agent.conv();
-          agent.add(deposit_service.depositTradingPower(conv));
         }
         catch(exception){
           ERROR_UTIL.serverError(exception, agent);
         }
       }
       
-      function depositDetails(){
-        try{
-          let conv = agent.conv();
-          deposit_service.depositDetails(conv);
-          agent.add(conv);
-        }
-        catch(exception){
-          ERROR_UTIL.serverError(exception, agent);
-        }
-      }
-      
-      function upcomingVacation(){
-        try{
-          let conv = agent.conv();
-          conv.user.storage.startResortIndex=0;
-          confirmedVacation_service.showUpcomingVacation(conv);
-          agent.add(conv);
-        }
-        catch(exception){
-          ERROR_UTIL.serverError(exception, agent);
-        }
-      } 
-      
-      function upcomingVacationNext(){
-        try{
-          let conv = agent.conv();
-          confirmedVacation_service.showUpcomingVacation(conv);
-          agent.add(conv);
-        }
-        catch(exception){
-          ERROR_UTIL.serverError(exception, agent);
-        }
-      }
-      
-      function exit(agent) {
-        agent.add(goodbye_service.exit());
-      }
-
-      function testWebhook(agent) {
-        agent.add(`This went right inside Webhook`);
-      }
-
 
       // Dialogflow intent Function Mapping
       let intentMap = new Map();
-      intentMap.set('Default Welcome Intent', welcome);
-      intentMap.set('Default Fallback Intent', fallback);
-      intentMap.set('Search Resort', searchResort);
-      intentMap.set('Search Resort Next', searchResortNext);
-      intentMap.set('Deposit Trading Power', depositTradingPower);
-      intentMap.set('Deposit Details', depositDetails);
-      intentMap.set('Vacation Details', upcomingVacation);
-      intentMap.set('Vacation Details Next', upcomingVacationNext);
-      intentMap.set('Exit', exit);
-      intentMap.set('TestWebhook', testWebhook);
+      intentMap.set('DefaultWelcomeIntent', welcome_intent.welcome);
+      intentMap.set('DefaultFallbackIntent', fallback_intent.fallback);
+      intentMap.set('Exit', exit_intent.exit);
+      
+      /*---------------------SEARCH RESORT INTENT START------------------*/
+      intentMap.set('SearchResortIntent', searchResort_intent.askLocation);
+      intentMap.set('SearchResortIntent.askLocation', searchResort_intent.askDate);
+      intentMap.set('SearchResortIntent.askLocation.askDate', searchResort_intent.searchResort);
+      intentMap.set('SearchResortIntent.askLocation.askDate.askIndex', searchResort_intent.bookResortByIndex);
+      intentMap.set('SearchResortIntent.askLocation.askDate.askIndex.no',  exit_intent.exit);
+      intentMap.set('SearchResortIntent.next', searchResort_intent.searchResortNext);
+      /*---------------------SEARCH RESORT INTENT END------------------*/
+      
+      /*---------------------CONFIRMED VACATION INTENT START------------------*/
+      intentMap.set('ConfirmedVacationIntent', confirmedVacation_intent.showUpcomingVacation);
+      intentMap.set('ConfirmedVacationIntent.yes', confirmedVacation_intent.showMoreUpcomingVacation);
+      intentMap.set('ConfirmedVacationIntent.yes.next', confirmedVacation_intent.nextVacationDetails);
+      intentMap.set('ConfirmedVacationIntent.yes.yes', confirmedVacation_intent.nextVacationDetails);
+      intentMap.set('ConfirmedVacationIntent.yes.no', exit_intent.exit);
+      intentMap.set('ConfirmedVacationIntent.no', exit_intent.exit);
+      /*---------------------CONFIRMED VACATION INTENT END------------------*/
+      
+      /*---------------------DEPOSIT DETAILS INTENT START------------------*/
+      intentMap.set('DepositDetailsIntent', deposit_intent.depositDetails);
+      intentMap.set('DepositDetailsIntent.details', deposit_intent.furtherDetails);
+      intentMap.set('DepositDetailsIntent.details.maxTp', deposit_intent.maxTradingPoints);
+      intentMap.set('DepositDetailsIntent.details.no', exit_intent.exit);
+      intentMap.set('DepositDetailsIntent.no', exit_intent.exit);
+      /*---------------------DEPOSIT DETAILS INTENT END------------------*/
       
       agent.handleRequest(intentMap);
     });

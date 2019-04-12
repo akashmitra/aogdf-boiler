@@ -3,6 +3,7 @@ dependencies:
   dialogflow-fulfillment: 0.6.1
   express: 4.16.4
   log4js: 4.0.2
+  random-js: 2.0.0
   request: 2.88.0
 packages:
   /@types/aws-lambda/0.0.33:
@@ -818,6 +819,10 @@ packages:
       node: '>=0.6'
     resolution:
       integrity: sha512-KIJqT9jQJDQx5h5uAVPimw6yVg2SekOKu959OCtktD3FjzbpvaPr8i4zzg07DOMz+igA4W/aNM7OV8H37pFYfA==
+  /random-js/2.0.0:
+    dev: false
+    resolution:
+      integrity: sha512-7+LxCZeEcI2/uVM1TCYVj834QupkIu9XygTnXaGOqNr5qbdpCOw8+3x8D4itOID0DmQAGLX5vtvlSnSvi+trGQ==
   /range-parser/1.2.0:
     dev: false
     engines:
@@ -1048,4 +1053,5 @@ specifiers:
   dialogflow-fulfillment: ^0.6.1
   express: ^4.16.4
   log4js: ^4.0.2
+  random-js: ^2.0.0
   request: ^2.88.0
